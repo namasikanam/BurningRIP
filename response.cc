@@ -85,36 +85,37 @@ int main()
 
     Init(addrs);
 
+    // Add direct routes
+    // For example:
+    // 10.0.0.0/24 if 0
+    // 10.0.1.0/24 if 1
+    // 10.0.2.0/24 if 2
+    // 10.0.3.0/24 if 3
+    for (uint32_t i = 0; i < N_IFACE_ON_BOARD; i++)
+    {
+        RoutingTableEntry entry = RoutingTableEntry(
+            htonl(addrs[i]) & 0x00FFFFFF, // big endian
+            24,                           // small endian
+            i,                            // small endian
+            0,                            // big endian, means direct
+            0x01000000                    // big endian
+        );
+
+        entries[entryTot++] = entry;
+    }
+
     uint64_t last_time = 0;
     while (1)
     {
         uint64_t time = GetTicks();
         if (time > last_time + 5 * 1000)
         { // 5s for test
-
-            // Add direct routes
-            // For example:
-            // 10.0.0.0/24 if 0
-            // 10.0.1.0/24 if 1
-            // 10.0.2.0/24 if 2
-            // 10.0.3.0/24 if 3
-            for (uint32_t i = 0; i < N_IFACE_ON_BOARD; i++)
-            {
-                RoutingTableEntry entry = RoutingTableEntry(
-                    htonl(addrs[i]) & 0x00FFFFFF, // big endian
-                    24,                           // small endian
-                    i,                            // small endian
-                    0,                            // big endian, means direct
-                    0x01000000                    // big endian
-                );
-
-                entries[entryTot++] = entry;
-            }
-
             printf("Finish init, start to send!\n");
 
             SendEthernetFrame(0, frame, packetAssemble(routingTable(0), htonl(addrs[0]), 0x0b00000a));
             SendEthernetFrame(3, frame, packetAssemble(routingTable(3), htonl(addrs[3]), 0x0c03000a));
+
+            last_time = time;
         }
     }
 }
