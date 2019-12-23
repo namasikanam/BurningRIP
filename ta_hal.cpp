@@ -34,7 +34,7 @@ uint64_t GetTicks()
     return time2 << 32 | time1;
 }
 
-int ReceiveEthernetFrame(uint8_t *&buffer, int64_t timeout, int *if_index)
+int ReceiveEthernetFrame(uint8_t *frame, int64_t timeout, int *if_index)
 {
     // volatile = could be changed by sb. outside this cpp program
     volatile uint32_t *BufferIndexPtr = (uint32_t *)BUFFER_TAIL_ADDRESS;
@@ -62,25 +62,27 @@ int ReceiveEthernetFrame(uint8_t *&buffer, int64_t timeout, int *if_index)
         sys_index = 0;
 
     // packet address
-    buffer = (uint8_t *)(BUFFER_BASE_ADDRESS + ((sys_index++) << 11)) + 4;
+    uint8_t *buffer = (uint8_t *)(BUFFER_BASE_ADDRESS + ((sys_index++) << 11)) + 4;
 
     *(int *)if_index = *(uint8_t *)(buffer + 15) - 1;
 
     int res = *(int *)(buffer - 4);
 
+    memcpy(frame, buffer - 4, res + 4);
+
     puts("[recv]", 6);
 
-    // printf("sys_index = ", 11);
-    // puthex(sys_index);
-    // putc('\n');
-    // printf("tail = ", 7);
-    // puthex(tail);
-    // putc('\n');
-
+    for (int i = 0; i < 4; ++i)
+    {
+        putc(hextoch(frame[i] >> 4 & 0xf));
+        putc(hextoch(frame[i] & 0xf));
+        putc(' ');
+    }
+    putc('\n');
     for (int i = 0; i < res; ++i)
     {
-        putc(hextoch(buffer[i] >> 4 & 0xf));
-        putc(hextoch(buffer[i] & 0xf));
+        putc(hextoch(frame[4 + i] >> 4 & 0xf));
+        putc(hextoch(frame[4 + i] & 0xf));
 
         if ((i & 15) == 15)
         {
@@ -96,7 +98,7 @@ int ReceiveEthernetFrame(uint8_t *&buffer, int64_t timeout, int *if_index)
     return res;
 }
 
-void SendEthernetFrame(int if_index, uint8_t *buffer, size_t length)
+void SendEthernetFrame(int if_index, uint8_t *frame, size_t length)
 {
     printf("Start to send an Enternet Frame of length ");
     printf(length);
@@ -104,37 +106,47 @@ void SendEthernetFrame(int if_index, uint8_t *buffer, size_t length)
     printf(32);
     printf(")\n");
 
+    frame += 4;
+
     // MAC Address of our router
-    *(uint8_t *)(buffer + 0) = 0x02;
-    *(uint8_t *)(buffer + 1) = 0x02;
-    *(uint8_t *)(buffer + 2) = 0x03;
-    *(uint8_t *)(buffer + 3) = 0x03;
-    *(uint8_t *)(buffer + 4) = 0x00;
-    *(uint8_t *)(buffer + 5) = 0x00;
+    *(uint8_t *)(frame + 0) = 0x02;
+    *(uint8_t *)(frame + 1) = 0x02;
+    *(uint8_t *)(frame + 2) = 0x03;
+    *(uint8_t *)(frame + 3) = 0x03;
+    *(uint8_t *)(frame + 4) = 0x00;
+    *(uint8_t *)(frame + 5) = 0x00;
 
     // VLAN TAG
-    *(uint8_t *)(buffer + 12) = 0x81;
-    *(uint8_t *)(buffer + 13) = 0x00;
-    *(uint8_t *)(buffer + 14) = 0x00;
-    *(uint8_t *)(buffer + 15) = if_index + 1;
-    *(uint8_t *)(buffer + 16) = 0x08;
-    *(uint8_t *)(buffer + 17) = 0x00;
+    *(uint8_t *)(frame + 12) = 0x81;
+    *(uint8_t *)(frame + 13) = 0x00;
+    *(uint8_t *)(frame + 14) = 0x00;
+    *(uint8_t *)(frame + 15) = if_index + 1;
+    *(uint8_t *)(frame + 16) = 0x08;
+    *(uint8_t *)(frame + 17) = 0x00;
 
-    buffer -= 4;
-    *(int *)(buffer) = length;
+    frame -= 4;
+    *(int *)(frame) = length;
+
     volatile uint32_t *SendStatePtr = (uint32_t *)SEND_STATE_ADDRESS;
     while (1)
     {
         if (((*(uint32_t *)SendStatePtr) & 1) == 0)
             break;
     }
-    *(uint32_t *)SEND_CONTROL_ADDRESS = (uint32_t)buffer;
+    *(uint32_t *)SEND_CONTROL_ADDRESS = (uint32_t)frame;
 
     puts("[send]", 6);
+    for (int i = 0; i < 4; ++i)
+    {
+        putc(hextoch(frame[i] >> 4 & 0xf));
+        putc(hextoch(frame[i] & 0xf));
+        putc(' ');
+    }
+    putc('\n');
     for (int i = 0; i < length; ++i)
     {
-        putc(hextoch(buffer[i + 4] >> 4 & 0xf));
-        putc(hextoch(buffer[i + 4] & 0xf));
+        putc(hextoch(frame[4 + i] >> 4 & 0xf));
+        putc(hextoch(frame[4 + i] & 0xf));
 
         if ((i & 15) == 15)
         {

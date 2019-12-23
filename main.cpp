@@ -4,6 +4,8 @@
 #include "ta_table.h"
 #include "router.h"
 
+uint8_t frame[2048];
+
 int main()
 {
     // 0: 10.0.0.1
@@ -39,8 +41,7 @@ int main()
     while (1)
     {
         int if_index;
-        uint8_t *packet;
-        int res = ReceiveEthernetFrame(packet, 1000, &if_index);
+        int res = ReceiveEthernetFrame(frame, 1000, &if_index);
 
         if (res == 0)
         {
@@ -70,6 +71,6 @@ int main()
             puthex(*(uint8_t*)(packet + OFFSET + 16 + i));
         putc('\n');
 
-        SendEthernetFrame(if_index, packet, res);
+        SendEthernetFrame(if_index, frame, res);
     }
 }
