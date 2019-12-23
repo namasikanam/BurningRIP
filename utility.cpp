@@ -150,6 +150,8 @@ void div(int a, int b, int &x, int &y)
 }
 
 void assign4(uint8_t *p, uint32_t x) {
-    *(uint16_t *)p = x >> 16 & 0xffff;
-    *(uint16_t *)p = x & 0xffff;
+    *(uint8_t *)p = x >> 24 & 0xffff;
+    *(uint8_t *)(p + 1) = x >> 16 & 0xffff;
+    *(uint8_t *)(p + 2) = x >> 8 & 0xffff;
+    *(uint8_t *)(p + 3) = x & 0xffff;
 }

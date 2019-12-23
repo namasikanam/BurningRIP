@@ -33,9 +33,8 @@ uint32_t packetAssemble(RipPacket rip, uint32_t srcIP, uint32_t dstIP)
     *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 6) = 0;                                           // FLAGS/OFF
     *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 8) = 1;                                            // TTL
     *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 9) = 0x11;                                         // Protocol: UDP:0x11 TCP:0x06 ICMP:0x01
-    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 12) = srcIP >> 16 & 0xffff;                       // src ip
-    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 14) = srcIP & 0xffff;                       // dst ip
-    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 16) = dstIP >> 16 & 0xffff;                                      // dst ip
+    assign4(frame + IP_OFFSET_WITH_LEN + 12, srcIP);                       // src ip
+    assign4(frame + IP_OFFSET_WITH_LEN + 16, dstIP);// dst ip
     *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 18) = dstIP & 0xffff;                                      // dst ip
     *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 10) = ntohs(IPChecksum(frame + IP_OFFSET_WITH_LEN)); // checksum calculation for ip
 
