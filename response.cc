@@ -4,7 +4,7 @@
 #include "ta_hal.h"
 #include "router.h"
 
-uint8_t output[2048];
+uint8_t frame[2048];
 extern uint32_t assemble(const RipPacket *rip, uint8_t *buffer);
 
 /**
@@ -14,28 +14,28 @@ extern uint32_t assemble(const RipPacket *rip, uint8_t *buffer);
  */
 uint32_t packetAssemble(RipPacket rip, uint32_t srcIP, uint32_t dstIP)
 {
-    uint32_t len = assemble(&rip, output + SEND_IP_OFFSET + 20 + 8);
+    uint32_t len = assemble(&rip, frame + IP_OFFSET_WITH_LEN + 20 + 8);
 
     // UDP
-    *(uint16_t *)(output + SEND_IP_OFFSET + 20) = htons(520);     // src port: 520
-    *(uint16_t *)(output + SEND_IP_OFFSET + 20 + 2) = htons(520); // dst port: 520
-    *(uint16_t *)(output + SEND_IP_OFFSET + 20 + 4) = htons(len += 8);
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20) = htons(520);     // src port: 520
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20 + 2) = htons(520); // dst port: 520
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20 + 4) = htons(len += 8);
     // TODO: calculate the checksum of UDP
     // checksum calculation for udp
     // if you don't want to calculate udp checksum, set it to zero
-    *(uint16_t *)(output + SEND_IP_OFFSET + 20 + 6) = 0; // checksum: omitted as zero
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20 + 6) = 0; // checksum: omitted as zero
 
     // IP
-    *(uint8_t *)(output + SEND_IP_OFFSET + 0) = 0x45;                                         // Version & Header length
-    *(uint8_t *)(output + SEND_IP_OFFSET + 1) = 0xc0;                                         // Differentiated Services Code Point (DSCP)
-    *(uint16_t *)(output + SEND_IP_OFFSET + 2) = htons(len += 20);                            // Total Length
-    *(uint16_t *)(output + SEND_IP_OFFSET + 4) = 0;                                           // ID
-    *(uint16_t *)(output + SEND_IP_OFFSET + 6) = 0;                                           // FLAGS/OFF
-    *(uint8_t *)(output + SEND_IP_OFFSET + 8) = 1;                                            // TTL
-    *(uint8_t *)(output + SEND_IP_OFFSET + 9) = 0x11;                                         // Protocol: UDP:0x11 TCP:0x06 ICMP:0x01
-    *(uint32_t *)(output + SEND_IP_OFFSET + 12) = srcIP;                                      // src ip
-    *(uint32_t *)(output + SEND_IP_OFFSET + 16) = dstIP;                                      // dst ip
-    *(uint16_t *)(output + SEND_IP_OFFSET + 10) = ntohs(IPChecksum(output + SEND_IP_OFFSET)); // checksum calculation for ip
+    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 0) = 0x45;                                         // Version & Header length
+    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 1) = 0xc0;                                         // Differentiated Services Code Point (DSCP)
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 2) = htons(len += 20);                            // Total Length
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 4) = 0;                                           // ID
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 6) = 0;                                           // FLAGS/OFF
+    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 8) = 1;                                            // TTL
+    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 9) = 0x11;                                         // Protocol: UDP:0x11 TCP:0x06 ICMP:0x01
+    *(uint32_t *)(frame + IP_OFFSET_WITH_LEN + 12) = srcIP;                                      // src ip
+    *(uint32_t *)(frame + IP_OFFSET_WITH_LEN + 16) = dstIP;                                      // dst ip
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 10) = ntohs(IPChecksum(frame + IP_OFFSET_WITH_LEN)); // checksum calculation for ip
 
     return len +
            IP_OFFSET;
@@ -105,6 +105,6 @@ int main()
 
     printf("Finish init, start to send!\n");
 
-    SendEthernetFrame(0, output + 4, packetAssemble(routingTable(0), htonl(addrs[0]), 0x0b00000a));
-    SendEthernetFrame(3, output + 4, packetAssemble(routingTable(3), htonl(addrs[3]), 0x0c03000a));
+    SendEthernetFrame(0, frame, packetAssemble(routingTable(0), htonl(addrs[0]), 0x0b00000a));
+    SendEthernetFrame(3, frame, packetAssemble(routingTable(3), htonl(addrs[3]), 0x0c03000a));
 }
