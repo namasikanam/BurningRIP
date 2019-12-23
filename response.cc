@@ -20,21 +20,22 @@ uint32_t packetAssemble(RipPacket rip, uint32_t srcIP, uint32_t dstIP)
     *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20) = htons(520);     // src port: 520
     *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20 + 2) = htons(520); // dst port: 520
     *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20 + 4) = htons(len += 8);
-    // TODO: calculate the checksum of UDP
     // checksum calculation for udp
     // if you don't want to calculate udp checksum, set it to zero
-    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20 + 6) = 0; // checksum: omitted as zero
+    // Zero menas sender didn't calculate the checksum,
+    // in this case, the receiver won't check this checksum.
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20 + 6) = 0; // checksum: omitted as zero first
 
     // IP
-    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 0) = 0x45;                                         // Version & Header length
-    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 1) = 0xc0;                                         // Differentiated Services Code Point (DSCP)
-    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 2) = htons(len += 20);                            // Total Length
-    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 4) = 0;                                           // ID
-    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 6) = 0;                                           // FLAGS/OFF
-    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 8) = 1;                                            // TTL
-    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 9) = 0x11;                                         // Protocol: UDP:0x11 TCP:0x06 ICMP:0x01
-    assign4(frame + IP_OFFSET_WITH_LEN + 12, srcIP);                       // src ip
-    assign4(frame + IP_OFFSET_WITH_LEN + 16, dstIP);// dst ip
+    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 0) = 0x45;                                            // Version & Header length
+    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 1) = 0xc0;                                            // Differentiated Services Code Point (DSCP)
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 2) = htons(len += 20);                               // Total Length
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 4) = 0;                                              // ID
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 6) = 0;                                              // FLAGS/OFF
+    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 8) = 1;                                               // TTL
+    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 9) = 0x11;                                            // Protocol: UDP:0x11 TCP:0x06 ICMP:0x01
+    assign4(frame + IP_OFFSET_WITH_LEN + 12, srcIP);                                                // src ip
+    assign4(frame + IP_OFFSET_WITH_LEN + 16, dstIP);                                                // dst ip
     *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 10) = ntohs(IPChecksum(frame + IP_OFFSET_WITH_LEN)); // checksum calculation for ip
 
     return len +
@@ -84,27 +85,36 @@ int main()
 
     Init(addrs);
 
-    // Add direct routes
-    // For example:
-    // 10.0.0.0/24 if 0
-    // 10.0.1.0/24 if 1
-    // 10.0.2.0/24 if 2
-    // 10.0.3.0/24 if 3
-    for (uint32_t i = 0; i < N_IFACE_ON_BOARD; i++)
+    uint64_t last_time = 0;
+    while (1)
     {
-        RoutingTableEntry entry = RoutingTableEntry(
-            htonl(addrs[i]) & 0x00FFFFFF, // big endian
-            24,                           // small endian
-            i,                            // small endian
-            0,                            // big endian, means direct
-            0x01000000                    // big endian
-        );
+        uint64_t time = GetTicks();
+        if (time > last_time + 5 * 1000)
+        { // 5s for test
 
-        entries[entryTot++] = entry;
+            // Add direct routes
+            // For example:
+            // 10.0.0.0/24 if 0
+            // 10.0.1.0/24 if 1
+            // 10.0.2.0/24 if 2
+            // 10.0.3.0/24 if 3
+            for (uint32_t i = 0; i < N_IFACE_ON_BOARD; i++)
+            {
+                RoutingTableEntry entry = RoutingTableEntry(
+                    htonl(addrs[i]) & 0x00FFFFFF, // big endian
+                    24,                           // small endian
+                    i,                            // small endian
+                    0,                            // big endian, means direct
+                    0x01000000                    // big endian
+                );
+
+                entries[entryTot++] = entry;
+            }
+
+            printf("Finish init, start to send!\n");
+
+            SendEthernetFrame(0, frame, packetAssemble(routingTable(0), htonl(addrs[0]), 0x0b00000a));
+            SendEthernetFrame(3, frame, packetAssemble(routingTable(3), htonl(addrs[3]), 0x0c03000a));
+        }
     }
-
-    printf("Finish init, start to send!\n");
-
-    SendEthernetFrame(0, frame, packetAssemble(routingTable(0), htonl(addrs[0]), 0x0b00000a));
-    SendEthernetFrame(3, frame, packetAssemble(routingTable(3), htonl(addrs[3]), 0x0c03000a));
 }

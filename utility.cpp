@@ -149,7 +149,10 @@ void div(int a, int b, int &x, int &y)
     }
 }
 
-void assign4(uint8_t *p, uint32_t x) {
+// x已经是按大端序存储的
+// 所以这里模拟小断续写地址
+void assign4(uint8_t *p, uint32_t x)
+{
     *(uint8_t *)p = x & 0xff;
     *(uint8_t *)(p + 1) = x >> 8 & 0xff;
     *(uint8_t *)(p + 2) = x >> 16 & 0xff;
