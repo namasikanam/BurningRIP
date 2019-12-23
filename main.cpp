@@ -4,6 +4,8 @@
 #include "ta_table.h"
 #include "router.h"
 
+uint8_t frame[2048];
+
 int main()
 {
     // 0: 10.0.0.1
@@ -39,8 +41,7 @@ int main()
     while (1)
     {
         int if_index;
-        uint8_t *packet;
-        int res = ReceiveEthernetFrame(packet, 1000, &if_index);
+        int res = ReceiveEthernetFrame(frame, 1000, &if_index);
 
         if (res == 0)
         {
@@ -53,15 +54,13 @@ int main()
             continue;
         }
 
-        uint16_t src_addr_1 = *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 12);
-        uint16_t src_addr_2 = *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 14);
-        uint16_t dst_addr_1 = *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 16);
-        uint16_t dst_addr_2 = *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 18);
-        *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 12) = dst_addr_1;
-        *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 14) = dst_addr_2;
-        *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 16) = src_addr_1;
-        *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 18) = src_addr_2;
+        for (int i = 0; i < 4; ++i)
+        {
+            uint8_t t = frame[i + IP_OFFSET_WITH_LEN + 12];
+            frame[i + IP_OFFSET_WITH_LEN + 12] = frame[i + IP_OFFSET_WITH_LEN + 16];
+            frame[i + IP_OFFSET_WITH_LEN + 16] = t;
+        }
 
-        SendEthernetFrame(if_index, packet, res);
+        SendEthernetFrame(if_index, frame, res);
     }
 }

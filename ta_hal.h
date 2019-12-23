@@ -2,8 +2,8 @@
 
 #include "utility.h"
 #define N_IFACE_ON_BOARD 4 // Default
-#define RECEIVE_IP_OFFSET 18 + 4
-#define SEND_IP_OFFSET 18 + 4
+#define IP_OFFSET 18
+#define IP_OFFSET_WITH_LEN 18 + 4
 
 enum HAL_ERROR_NUMBER
 {
@@ -52,7 +52,7 @@ extern "C"
  * 
  * @note IP包从(buffer + 16)开始
  */
-    int ReceiveEthernetFrame(uint8_t *&buffer, int64_t timeout,
+    int ReceiveEthernetFrame(uint8_t *frame, int64_t timeout,
                              int *if_index);
 
     /**
@@ -65,7 +65,7 @@ extern "C"
  * @param length IN，待发送报文的长度
  * @return int 0 表示成功，非 0 为失败
  */
-    void SendEthernetFrame(int if_index, uint8_t *buffer, size_t length);
+    void SendEthernetFrame(int if_index, uint8_t *frame, size_t length);
 
 #ifdef __cplusplus
 }

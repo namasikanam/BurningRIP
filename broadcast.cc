@@ -19,28 +19,28 @@ uint32_t addrs[N_IFACE_ON_BOARD] = {0x0a000001, 0x0a000101, 0x0a000201, 0x0a0003
 
 uint32_t packetAssemble(RipPacket rip, uint32_t srcIP, uint32_t dstIP)
 {
-    uint32_t len = assemble(&rip, output + IP_OFFSET + 20 + 8);
+    uint32_t len = assemble(&rip, output + SEND_IP_OFFSET + 20 + 8);
 
     // UDP
-    *(uint16_t *)(output + IP_OFFSET + 20) = htons(520);     // src port: 520
-    *(uint16_t *)(output + IP_OFFSET + 20 + 2) = htons(520); // dst port: 520
-    *(uint16_t *)(output + IP_OFFSET + 20 + 4) = htons(len += 8);
+    *(uint16_t *)(output + SEND_IP_OFFSET + 20) = htons(520);     // src port: 520
+    *(uint16_t *)(output + SEND_IP_OFFSET + 20 + 2) = htons(520); // dst port: 520
+    *(uint16_t *)(output + SEND_IP_OFFSET + 20 + 4) = htons(len += 8);
     // TODO: calculate the checksum of UDP
     // checksum calculation for udp
     // if you don't want to calculate udp checksum, set it to zero
-    *(uint16_t *)(output + IP_OFFSET + 20 + 6) = 0; // checksum: omitted as zero
+    *(uint16_t *)(output + SEND_IP_OFFSET + 20 + 6) = 0; // checksum: omitted as zero
 
     // IP
-    *(uint8_t *)(output + IP_OFFSET + 0) = 0x45;                                    // Version & Header length
-    *(uint8_t *)(output + IP_OFFSET + 1) = 0xc0;                                    // Differentiated Services Code Point (DSCP)
-    *(uint16_t *)(output + IP_OFFSET + 2) = htons(len += 20);                       // Total Length
-    *(uint16_t *)(output + IP_OFFSET + 4) = 0;                                      // ID
-    *(uint16_t *)(output + IP_OFFSET + 6) = 0;                                      // FLAGS/OFF
-    *(uint8_t *)(output + IP_OFFSET + 8) = 1;                                       // TTL
-    *(uint8_t *)(output + IP_OFFSET + 9) = 0x11;                                    // Protocol: UDP:0x11 TCP:0x06 ICMP:0x01
-    *(uint32_t *)(output + IP_OFFSET + 12) = srcIP;                                 // src ip
-    *(uint32_t *)(output + IP_OFFSET + 16) = dstIP;                                 // dst ip
-    *(uint16_t *)(output + IP_OFFSET + 10) = ntohs(IPChecksum(output + IP_OFFSET)); // checksum calculation for ip
+    *(uint8_t *)(output + SEND_IP_OFFSET + 0) = 0x45;                                         // Version & Header length
+    *(uint8_t *)(output + SEND_IP_OFFSET + 1) = 0xc0;                                         // Differentiated Services Code Point (DSCP)
+    *(uint16_t *)(output + SEND_IP_OFFSET + 2) = htons(len += 20);                            // Total Length
+    *(uint16_t *)(output + SEND_IP_OFFSET + 4) = 0;                                           // ID
+    *(uint16_t *)(output + SEND_IP_OFFSET + 6) = 0;                                           // FLAGS/OFF
+    *(uint8_t *)(output + SEND_IP_OFFSET + 8) = 1;                                            // TTL
+    *(uint8_t *)(output + SEND_IP_OFFSET + 9) = 0x11;                                         // Protocol: UDP:0x11 TCP:0x06 ICMP:0x01
+    *(uint32_t *)(output + SEND_IP_OFFSET + 12) = srcIP;                                      // src ip
+    *(uint32_t *)(output + SEND_IP_OFFSET + 16) = dstIP;                                      // dst ip
+    *(uint16_t *)(output + SEND_IP_OFFSET + 10) = ntohs(IPChecksum(output + SEND_IP_OFFSET)); // checksum calculation for ip
 
     return len +
            IP_OFFSET;
