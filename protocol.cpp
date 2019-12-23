@@ -129,10 +129,10 @@ uint32_t assemble(const RipPacket *rip, uint8_t *buffer)
         *buffer = 0;
         *(buffer + 1) = rip->command == 1 ? 0 : 2;    // Family
         *(uint16_t *)(buffer + 2) = 0;                // Route Tag = 0
-        *(uint32_t *)(buffer + 4) = ripEntry.addr;    // IPv4 Address
-        *(uint32_t *)(buffer + 8) = ripEntry.mask;    // Netmask
-        *(uint32_t *)(buffer + 12) = 0;               // Next Hop
-        *(uint32_t *)(buffer + 16) = ripEntry.metric; // Metric
+        assign4(buffer + 4, ripEntry.addr);    // IPv4 Address
+        assign4(buffer + 8, ripEntry.mask);    // Netmask
+        assign4(buffer + 12, 0);               // Next Hop
+        assign4(buffer + 16, ripEntry.metric); // Metric
     }
 
     return 4 + rip->numEntries * 20;

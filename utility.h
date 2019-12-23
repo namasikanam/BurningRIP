@@ -48,4 +48,6 @@ void div(int a, int b, int &x, int &y);
 // saved as big endian
 in_addr_t read_addr(uint8_t *p);
 
+void assign4(uint8_t *p, uint32_t x);
+
 #endif
