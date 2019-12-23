@@ -52,15 +52,23 @@ int main()
             // packet is truncated, ignore it
             continue;
         }
-
-        uint16_t src_addr_1 = *(uint16_t *)(packet + IP_OFFSET + 12);
-        uint16_t src_addr_2 = *(uint16_t *)(packet + IP_OFFSET + 14);
-        uint16_t dst_addr_1 = *(uint16_t *)(packet + IP_OFFSET + 16);
-        uint16_t dst_addr_2 = *(uint16_t *)(packet + IP_OFFSET + 18);
-        *(uint16_t *)(packet + IP_OFFSET + 12) = dst_addr_1;
-        *(uint16_t *)(packet + IP_OFFSET + 14) = dst_addr_2;
-        *(uint16_t *)(packet + IP_OFFSET + 16) = src_addr_1;
-        *(uint16_t *)(packet + IP_OFFSET + 18) = src_addr_2;
+        const int OFFSET = 18;
+        uint8_t type = *((uint8_t*)(packet + OFFSET + 9));
+        if (type == 0x11) puts("udp\t", 4);
+        else if (type == 0x6) puts("tcp\t", 4);
+        else if (type == 0x1)  {
+            puts("icmp\t", 5);
+            putc('i');putc('d');putc(':');
+            puthex(*(uint8_t*)(packet + OFFSET + 4));
+            puthex(*(uint8_t*)(packet + OFFSET + 5));
+            puts("\tsrc:", 5);
+            for (int i = 0; i < 4; i++) 
+                puthex(*(uint8_t*)(packet + OFFSET + 12 + i));
+        }
+        puts("\tdst:", 5);
+        for (int i = 0; i < 4; i++) 
+            puthex(*(uint8_t*)(packet + OFFSET + 16 + i));
+        putc('\n');
 
         SendEthernetFrame(if_index, packet, res);
     }
