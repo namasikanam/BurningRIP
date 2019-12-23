@@ -53,14 +53,14 @@ int main()
             continue;
         }
 
-        uint16_t src_addr_1 = *(uint16_t *)(packet + IP_OFFSET + 12);
-        uint16_t src_addr_2 = *(uint16_t *)(packet + IP_OFFSET + 14);
-        uint16_t dst_addr_1 = *(uint16_t *)(packet + IP_OFFSET + 16);
-        uint16_t dst_addr_2 = *(uint16_t *)(packet + IP_OFFSET + 18);
-        *(uint16_t *)(packet + IP_OFFSET + 12) = dst_addr_1;
-        *(uint16_t *)(packet + IP_OFFSET + 14) = dst_addr_2;
-        *(uint16_t *)(packet + IP_OFFSET + 16) = src_addr_1;
-        *(uint16_t *)(packet + IP_OFFSET + 18) = src_addr_2;
+        uint16_t src_addr_1 = *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 12);
+        uint16_t src_addr_2 = *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 14);
+        uint16_t dst_addr_1 = *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 16);
+        uint16_t dst_addr_2 = *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 18);
+        *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 12) = dst_addr_1;
+        *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 14) = dst_addr_2;
+        *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 16) = src_addr_1;
+        *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 18) = src_addr_2;
 
         SendEthernetFrame(if_index, packet, res);
     }

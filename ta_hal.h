@@ -2,7 +2,8 @@
 
 #include "utility.h"
 #define N_IFACE_ON_BOARD 4 // Default
-#define IP_OFFSET 18 + 4
+#define RECEIVE_IP_OFFSET 18 + 4
+#define SEND_IP_OFFSET 18 + 4
 
 enum HAL_ERROR_NUMBER
 {
