@@ -6,6 +6,12 @@
 
 uint8_t frame[2048];
 
+void puthex2(uint8_t x)
+{
+    putc(hextoch(x >> 4 & 0xf));
+    putc(hextoch(x & 0xf));
+}
+
 int main()
 {
     // 0: 10.0.0.1
@@ -54,22 +60,45 @@ int main()
             continue;
         }
         const int OFFSET = 18;
-        uint8_t type = *((uint8_t*)(packet + OFFSET + 9));
-        if (type == 0x11) puts("udp\t", 4);
-        else if (type == 0x6) puts("tcp\t", 4);
-        else if (type == 0x1)  {
-            puts("icmp\t", 5);
-            putc('i');putc('d');putc(':');
-            puthex(*(uint8_t*)(packet + OFFSET + 4));
-            puthex(*(uint8_t*)(packet + OFFSET + 5));
-            puts("\tsrc:", 5);
-            for (int i = 0; i < 4; i++) 
-                puthex(*(uint8_t*)(packet + OFFSET + 12 + i));
+        uint8_t *packet = frame + 4;
+        uint8_t type = *((uint8_t *)(packet + OFFSET + 9));
+        if (type == 0x11)
+            printf("udp\t");
+        else if (type == 0x6)
+            printf("tcp\t");
+        else if (type == 0x2)
+            printf("igmp\t");
+        else if (type == 0x1)
+        {
+            printf("icmp\t");
+            printf("id:");
+            puthex(*(uint8_t *)(packet + OFFSET + 4));
+            puthex(*(uint8_t *)(packet + OFFSET + 5));
+            printf("\tsrc:");
+            for (int i = 0; i < 4; i++)
+                puthex2(*(uint8_t *)(packet + OFFSET + 12 + i));
+            printf("\t");
         }
-        puts("\tdst:", 5);
-        for (int i = 0; i < 4; i++) 
-            puthex(*(uint8_t*)(packet + OFFSET + 16 + i));
+        else
+        {
+            printf("type:");
+            puthex(type);
+            printf("\t");
+        }
+        printf("dst:");
+        for (int i = 0; i < 4; i++)
+            puthex2(*(uint8_t *)(packet + OFFSET + 16 + i));
         putc('\n');
+
+        for (int i = 0; i < 4; i++)
+        {
+            uint8_t t = frame[i + IP_OFFSET_WITH_LEN + 12];
+            frame[i + IP_OFFSET_WITH_LEN + 12] = frame[i + IP_OFFSET_WITH_LEN + 16];
+            frame[i + IP_OFFSET_WITH_LEN + 16] = t;
+        }
+
+        puthex((uint32_t)frame);
+        puts("", 0);
 
         SendEthernetFrame(if_index, frame, res);
     }

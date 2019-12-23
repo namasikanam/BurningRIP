@@ -11,6 +11,7 @@ SECTIONS {
     .data : {
         *(.data.*)
     }
+    . = 0x80400000;
     _bss_start = .;
     .bss : {
         *(.bss.*)
