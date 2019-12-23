@@ -16,6 +16,10 @@ uint32_t packetAssemble(RipPacket rip, uint32_t srcIP, uint32_t dstIP)
 {
     uint32_t len = assemble(&rip, frame + IP_OFFSET_WITH_LEN + 20 + 8);
 
+    printf("After assemble, len = ");
+    printf(len);
+    putc('\n');
+
     // UDP
     *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20) = htons(520);     // src port: 520
     *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20 + 2) = htons(520); // dst port: 520
@@ -37,6 +41,10 @@ uint32_t packetAssemble(RipPacket rip, uint32_t srcIP, uint32_t dstIP)
     assign4(frame + IP_OFFSET_WITH_LEN + 12, srcIP);                                                // src ip
     assign4(frame + IP_OFFSET_WITH_LEN + 16, dstIP);                                                // dst ip
     *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 10) = ntohs(IPChecksum(frame + IP_OFFSET_WITH_LEN)); // checksum calculation for ip
+
+    printf("After packet assemble, len = ");
+    printf(len);
+    putc('\n');
 
     return len +
            IP_OFFSET;
@@ -110,7 +118,7 @@ int main()
         uint64_t time = GetTicks();
         if (time > last_time + 5 * 1000)
         { // 5s for test
-            printf("Finish init, start to send!\n");
+            printf("Start to send for every 5s.\n");
 
             SendEthernetFrame(0, frame, packetAssemble(routingTable(0), htonl(addrs[0]), 0x0b00000a));
             SendEthernetFrame(3, frame, packetAssemble(routingTable(3), htonl(addrs[3]), 0x0c03000a));

@@ -108,11 +108,9 @@ int ReceiveEthernetFrame(uint8_t *frame, int64_t timeout, int *if_index)
 
 void SendEthernetFrame(int if_index, uint8_t *frame, size_t length)
 {
-    // printf("Start to send an Enternet Frame of length ");
-    // printf(length);
-    // printf("(");
-    // printf(32);
-    // printf(")\n");
+    printf("Start to send an Enternet Frame of length ");
+    printf(length);
+    printf(")\n");
 
     frame += 4;
 
