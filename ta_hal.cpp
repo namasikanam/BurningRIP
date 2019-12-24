@@ -70,47 +70,39 @@ int ReceiveEthernetFrame(uint8_t *frame, int64_t timeout, int *if_index)
 
     memcpy(frame, buffer - 4, res + 4);
 
-    printf("sysindex:");
-    printf(sys_index);
-    printf("\ttail:");
-    printf(tail);
-    printf("\t");
+    // puts("[recv]", 6);
 
-    return res;
+    // for (int i = 0; i < 4; ++i)
+    // {
+    //     putc(hextoch(frame[i] >> 4 & 0xf));
+    //     putc(hextoch(frame[i] & 0xf));
+    //     putc(' ');
+    // }
+    // putc('\n');
+    // for (int i = 0; i < res; ++i)
+    // {
+    //     putc(hextoch(frame[4 + i] >> 4 & 0xf));
+    //     putc(hextoch(frame[4 + i] & 0xf));
 
-    puts("[recv]", 6);
-
-    for (int i = 0; i < 4; ++i)
-    {
-        putc(hextoch(frame[i] >> 4 & 0xf));
-        putc(hextoch(frame[i] & 0xf));
-        putc(' ');
-    }
-    putc('\n');
-    for (int i = 0; i < res; ++i)
-    {
-        putc(hextoch(frame[4 + i] >> 4 & 0xf));
-        putc(hextoch(frame[4 + i] & 0xf));
-
-        if ((i & 15) == 15)
-        {
-            putc('\n');
-        }
-        else
-        {
-            putc(' ');
-        }
-    }
-    putc('\n');
+    //     if ((i & 15) == 15)
+    //     {
+    //         putc('\n');
+    //     }
+    //     else
+    //     {
+    //         putc(' ');
+    //     }
+    // }
+    // putc('\n');
 
     return res;
 }
 
 void SendEthernetFrame(int if_index, uint8_t *frame, size_t length)
 {
-    printf("Start to send an Enternet Frame of length ");
-    printf(length);
-    printf(")\n");
+    // printf("Start to send an Enternet Frame of length ");
+    // printf(length);
+    // printf(")\n");
 
     frame += 4;
 
@@ -141,29 +133,27 @@ void SendEthernetFrame(int if_index, uint8_t *frame, size_t length)
     }
     *(uint32_t *)SEND_CONTROL_ADDRESS = (uint32_t)frame;
 
-    return;
+    // puts("[send]", 6);
+    // for (int i = 0; i < 4; ++i)
+    // {
+    //     putc(hextoch(frame[i] >> 4 & 0xf));
+    //     putc(hextoch(frame[i] & 0xf));
+    //     putc(' ');
+    // }
+    // putc('\n');
+    // for (int i = 0; i < length; ++i)
+    // {
+    //     putc(hextoch(frame[4 + i] >> 4 & 0xf));
+    //     putc(hextoch(frame[4 + i] & 0xf));
 
-    puts("[send]", 6);
-    for (int i = 0; i < 4; ++i)
-    {
-        putc(hextoch(frame[i] >> 4 & 0xf));
-        putc(hextoch(frame[i] & 0xf));
-        putc(' ');
-    }
-    putc('\n');
-    for (int i = 0; i < length; ++i)
-    {
-        putc(hextoch(frame[4 + i] >> 4 & 0xf));
-        putc(hextoch(frame[4 + i] & 0xf));
-
-        if ((i & 15) == 15)
-        {
-            putc('\n');
-        }
-        else
-        {
-            putc(' ');
-        }
-    }
-    putc('\n');
+    //     if ((i & 15) == 15)
+    //     {
+    //         putc('\n');
+    //     }
+    //     else
+    //     {
+    //         putc(' ');
+    //     }
+    // }
+    // putc('\n');
 }

@@ -32,7 +32,9 @@ template <typename T1, typename T2>
 void printf(const char *st, T1 a, T2 b) {}
 template <typename T1, typename T2, typename T3>
 void printf(const char *st, T1 a, T2 b, T3 c) {}
-void printf(int x);
+void printf(unsigned x);
+void printaddr(unsigned x);
+void printaddr(void *x);
 
 void memset(void *s, char c, size_t len);
 void memcpy(void *dst, void *src, size_t len);

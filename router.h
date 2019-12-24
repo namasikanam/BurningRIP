@@ -16,10 +16,17 @@ struct RoutingTableEntry
 
     void print()
     {
-        //   printf("RoutingTableEntry {addr = %s", inet_ntoa(in_addr{addr}));
-        //   printf(", len = %" PRIu32 ", if_index = %" PRIu32, len, if_index);
-        //   printf(", nexthop = %s", inet_ntoa(in_addr{nexthop}));
-        //   printf(", metric = %s}", inet_ntoa(in_addr{metric}));
+        printf("RoutingTableEntry {addr = ");
+        printaddr(addr);
+        printf(", len = ");
+        printf(len);
+        printf(", if_index = ");
+        printf(if_index);
+        printf(", nexthop = ");
+        printaddr(nexthop);
+        printf(", metric = ");
+        printf(ntohl(metric));
+        printf("}");
     }
 };
 

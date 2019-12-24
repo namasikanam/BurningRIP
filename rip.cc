@@ -81,7 +81,7 @@ void response(int if_index, uint32_t if_ip, uint32_t adj_if_ip)
                 entries[i]->addr,
                 entries[i]->len == 0 ? 0 : htonl(~((1 << 32 - entries[i]->len) - 1)),
                 entries[i]->nexthop,
-                htonl(min(ntohl(entries[i]->metric) + 1, 16u)));
+                entries[i]->metric);
         }
     }
     if (p.numEntries)
@@ -94,8 +94,8 @@ void response(int if_index, uint32_t if_ip, uint32_t adj_if_ip)
 int main(int argc, char *argv[])
 {
     // little endian
-    uint32_t addrs[N_IFACE_ON_BOARD] = {0x0a000001, 0x0a000101, 0x0a000201, 0x0a000301};
-    uint32_t adjrouters[N_IFACE_ON_BOARD] = {0x0a00000b, 0x0a00010a, 0x0a00020a, 0x0a00030c};
+    uint32_t addrs[N_IFACE_ON_BOARD] = {0xc0a80001, 0xc0a80101, 0xc0a80201, 0xc0a80301};
+    uint32_t adjrouters[N_IFACE_ON_BOARD] = {0xc0a80002, 0xc0a80102, 0xc0a80202, 0xc0a80302};
 
     printf("addrs = [");
     for (int i = 0; i < N_IFACE_ON_BOARD; ++i)

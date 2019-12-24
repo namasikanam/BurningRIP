@@ -14,6 +14,8 @@ struct Trie
     bool query(uint32_t addr, uint32_t *nexthop, uint32_t *metric, uint32_t *if_index);
     int getEntries(RoutingTableEntry **entries, int if_index);
     int getEntriesRec(int node, uint32_t addr, RoutingTableEntry *entries, int if_index);
+
+    void print();
 };
 
 void Trie_Init();

@@ -24,6 +24,11 @@
 
 Trie root;
 
+void Lookup_Init()
+{
+    root = Trie();
+}
+
 /**
  * @brief 插入/删除一条路由表表项
  * @param insert 如果要插入则为 true ，要删除则为 false
@@ -48,6 +53,11 @@ bool update(bool insert, RoutingTableEntry entry)
         {
             return false;
         }
+
+        printf("Successfully insert ");
+        entry.print();
+        putc('\n');
+
         InsertHardwareTable(ntohl(entry.addr), ntohl(entry.nexthop), entry.len, entry.if_index);
         return true;
     }
@@ -70,7 +80,21 @@ bool query(uint32_t addr, uint32_t *nexthop, uint32_t *metric, uint32_t *if_inde
 
 int getEntries(RoutingTableEntry **entries, int if_index)
 {
+    printf("The address of root is ");
+    printaddr(&root);
+    putc('\n');
+
     return root.getEntries(entries, if_index);
 }
 
 void outputTable() {}
+
+void printRoot()
+{
+    printf("root = ");
+    printaddr(&root);
+    printf(", root->lc = ");
+    printaddr(root.lc);
+    printf(", root->rc = ");
+    printaddr(root.rc);
+}

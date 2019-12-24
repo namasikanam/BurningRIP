@@ -4,6 +4,14 @@
 #include "ta_table.h"
 #include "router.h"
 
+uint8_t frame[2048];
+
+void puthex2(uint8_t x)
+{
+    putc(hextoch(x >> 4 & 0xf));
+    putc(hextoch(x & 0xf));
+}
+
 int main()
 {
     // 0: 10.0.0.1
@@ -38,12 +46,8 @@ int main()
     int buffer_header = 0;
     while (1)
     {
-        macaddr_t src_mac;
-        macaddr_t dst_mac;
         int if_index;
-
-        uint8_t *packet;
-        int res = ReceiveEthernetFrame(packet, 1000, &if_index);
+        int res = ReceiveEthernetFrame(frame, 1000, &if_index);
 
         if (res == 0)
         {
@@ -55,16 +59,47 @@ int main()
             // packet is truncated, ignore it
             continue;
         }
+        const int OFFSET = 18;
+        uint8_t *packet = frame + 4;
+        uint8_t type = *((uint8_t *)(packet + OFFSET + 9));
+        if (type == 0x11)
+            printf("udp\t");
+        else if (type == 0x6)
+            printf("tcp\t");
+        else if (type == 0x2)
+            printf("igmp\t");
+        else if (type == 0x1)
+        {
+            printf("icmp\t");
+            printf("id:");
+            puthex2(*(uint8_t *)(packet + OFFSET + 4));
+            puthex2(*(uint8_t *)(packet + OFFSET + 5));
+            printf("\tsrc:");
+            for (int i = 0; i < 4; i++)
+                puthex2(*(uint8_t *)(packet + OFFSET + 12 + i));
+            printf("\t");
+        }
+        else
+        {
+            printf("type:");
+            puthex(type);
+            printf("\t");
+        }
+        printf("dst:");
+        for (int i = 0; i < 4; i++)
+            puthex2(*(uint8_t *)(packet + OFFSET + 16 + i));
+        putc('\n');
 
-        uint16_t src_addr_1 = *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 12);
-        uint16_t src_addr_2 = *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 14);
-        uint16_t dst_addr_1 = *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 16);
-        uint16_t dst_addr_2 = *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 18);
-        *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 12) = dst_addr_1;
-        *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 14) = dst_addr_2;
-        *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 16) = src_addr_1;
-        *(uint16_t *)(packet + RECEIVE_IP_OFFSET + 18) = src_addr_2;
+        for (int i = 0; i < 4; i++)
+        {
+            uint8_t t = frame[i + IP_OFFSET_WITH_LEN + 12];
+            frame[i + IP_OFFSET_WITH_LEN + 12] = frame[i + IP_OFFSET_WITH_LEN + 16];
+            frame[i + IP_OFFSET_WITH_LEN + 16] = t;
+        }
 
-        SendEthernetFrame(if_index, packet, res);
+        puthex((uint32_t)frame);
+        puts("", 0);
+
+        SendEthernetFrame(if_index, frame, res);
     }
 }

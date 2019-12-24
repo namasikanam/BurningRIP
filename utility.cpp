@@ -78,7 +78,7 @@ void printf(const char *s)
         putc(*s++);
 }
 
-void rec_printf(int x)
+void rec_printf(unsigned x)
 {
     if (x)
     {
@@ -90,7 +90,7 @@ void rec_printf(int x)
     }
 }
 
-void printf(int x)
+void printf(unsigned x)
 {
     if (x)
     {
@@ -100,6 +100,20 @@ void printf(int x)
     {
         putc('0');
     }
+}
+
+void printaddr(void *x)
+{
+    printf("0x");
+    for (int i = 28; i >= 0; i -= 4)
+        putc(hextoch((uint32_t)x >> i & 0xf));
+}
+
+void printaddr(unsigned x)
+{
+    printf("0x");
+    for (int i = 28; i >= 0; i -= 4)
+        putc(hextoch((uint32_t)x >> i & 0xf));
 }
 
 void memset(void *s, char c, size_t len)
