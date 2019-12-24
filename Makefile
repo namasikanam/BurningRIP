@@ -10,8 +10,8 @@ PYTHON = python3
 
 PROGRAM = boilerplate
 
-# SOURCES=$(wildcard *.cpp)
-SOURCES = main.cpp bootloader.cpp utility.cpp ta_hal.cpp protocol.cpp rip.cpp ta_table.cpp
+SOURCES=$(wildcard *.cpp)
+# SOURCES = main.cpp bootloader.cpp utility.cpp ta_hal.cpp protocol.cpp rip.cpp ta_table.cpp router_table.cpp lookup.cpp
 HEADERS=$(wildcard *.h)
 OBJECTS=$(SOURCES:%.cpp=%.cpp.o)
 DUMPS=$(SOURCES:%.cpp=%.d)

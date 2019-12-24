@@ -52,9 +52,20 @@ bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output)
         return false;
     }
     RipPacket &ripPacket = *output;
+    int src_port = ntohs(*(uint16_t *)(packet + 20));
+    int dst_port = ntohs(*(uint16_t *)(packet + 22));
     ripPacket.command = packet[28];
     int version = packet[29];
     int zero = *(uint16_t *)(packet + 30);
+    // DONE: check RIP port
+    if (!(src_port == 520))
+    {
+        return false;
+    }
+    if (!(dst_port == 520))
+    {
+        return false;
+    }
     if (!(ripPacket.command == 1 || ripPacket.command == 2))
     {
         return false;
@@ -71,10 +82,10 @@ bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output)
     for (int rip_start = 32; rip_start < totalLength; rip_start += 20)
     {
         RipEntry &ripEntry = ripPacket.entries[ripPacket.numEntries++];
-        ripEntry.addr = *(uint32_t *)(packet + rip_start + 4);
-        ripEntry.mask = *(uint32_t *)(packet + rip_start + 8);
-        ripEntry.nexthop = *(uint32_t *)(packet + rip_start + 12);
-        ripEntry.metric = *(uint32_t *)(packet + rip_start + 16);
+        get4(packet + rip_start + 4, ripEntry.addr);
+        get4(packet + rip_start + 8, ripEntry.mask);
+        get4(packet + rip_start + 12, ripEntry.nexthop);
+        get4(packet + rip_start + 16, ripEntry.metric);
 
         int family = packet[rip_start + 1];
 
@@ -88,6 +99,10 @@ bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output)
         }
         if (!(htonl(ripEntry.metric) >= 1 && htonl(ripEntry.metric) <= 16))
         { // metric
+            return false;
+        }
+        if (!(ripEntry.mask != 0xffffffffu && (ripEntry.addr & ~ripEntry.mask) == 0))
+        {
             return false;
         }
         if (![ripEntry]() {
@@ -122,11 +137,11 @@ uint32_t assemble(const RipPacket *rip, uint8_t *buffer)
     buffer[1] = 2;            // version
     buffer[2] = buffer[3] = 0;
     buffer += 4;
-    // TODO: Perhaps need to check the command.
     for (int i = 0; i < rip->numEntries; ++i, buffer += 20)
     {
         RipEntry ripEntry = rip->entries[i];
         *buffer = 0;
+        // The value field of command is assumed to be correct
         *(buffer + 1) = rip->command == 1 ? 0 : 2; // Family
         *(uint16_t *)(buffer + 2) = 0;             // Route Tag = 0
         assign4(buffer + 4, ripEntry.addr);        // IPv4 Address

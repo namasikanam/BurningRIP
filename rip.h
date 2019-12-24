@@ -28,7 +28,8 @@ struct RipEntry
 
 struct RipPacket
 {
-    RipPacket();
+    RipPacket(uint8_t c = 0);
+    RipPacket &operator=(RipPacket rhs);
 
     uint32_t numEntries;
     // all fields below are big endian

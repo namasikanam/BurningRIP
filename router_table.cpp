@@ -1,15 +1,16 @@
 #include "router_table.h"
 #include "router.h"
 
-RoutingTableEntry entries[MAX_ENTRY_NUM];
-int entryTot;
+RoutingTableEntry trie_entries[MAX_ENTRY_NUM];
+int trie_entryTot;
 
 Trie tries[32 * MAX_ENTRY_NUM];
 int trieTot;
 
 void Trie_Init()
 {
-    entryTot = trieTot = 0;
+    trie_entryTot = 0;
+    trieTot = 0;
 }
 
 Trie::Trie() : entry(nullptr), lc(nullptr), rc(nullptr) {}
@@ -41,8 +42,8 @@ bool Trie::insert(RoutingTableEntry entry)
 
     if (node->entry == nullptr || node->entry->metric > entry.metric)
     {
-        node->entry = entries + entryTot;
-        entries[entryTot++] = entry;
+        node->entry = trie_entries + trie_entryTot;
+        trie_entries[trie_entryTot++] = entry;
 
         return true;
     }

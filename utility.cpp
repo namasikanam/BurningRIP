@@ -158,3 +158,10 @@ void assign4(uint8_t *p, uint32_t x)
     *(uint8_t *)(p + 2) = x >> 16 & 0xff;
     *(uint8_t *)(p + 3) = x >> 24 & 0xff;
 }
+
+// x期望是大端序
+// 故这里模拟小端序来读
+void get4(const uint8_t *p, uint32_t &x)
+{
+    x = *(uint16_t *)p | *(uint16_t *)(p + 2) << 16;
+}

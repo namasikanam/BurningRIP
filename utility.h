@@ -50,5 +50,6 @@ in_addr_t read_addr(uint8_t *p);
 
 // x is big endian
 void assign4(uint8_t *p, uint32_t x);
+void get4(const uint8_t *p, uint32_t &x);
 
 #endif

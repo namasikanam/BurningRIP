@@ -2,6 +2,7 @@
 #include "router.h"
 #include "ta_hal.h"
 #include "utility.h"
+#include "router_table.h"
 
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
 extern bool update(bool insert, RoutingTableEntry entry);
@@ -9,50 +10,92 @@ extern bool query(uint32_t addr, uint32_t *nexthop, uint32_t *metric, uint32_t *
 extern bool forward(uint8_t *packet, size_t len);
 extern bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output);
 extern uint32_t assemble(const RipPacket *rip, uint8_t *buffer);
-// Some new functions are added here for convenience
-extern RipPacket routingTable(uint32_t if_index);
-extern void outputTable();
+int getEntries(RoutingTableEntry **entries, int if_index);
 
-uint8_t output[2048];
-// 0: 10.0.0.1
-// 1: 10.0.1.1
-// 2: 10.0.2.1
-// 3: 10.0.3.1
-// 子网地址
-// 小端序
-uint32_t addrs[N_IFACE_ON_BOARD] = {0x0a000001, 0x0a000101, 0x0a000201, 0x0a000301};
+uint8_t frame[2048];
 
+RoutingTableEntry *entries[MAX_ENTRY_NUM];
+
+/**
+ * @param rip 需要以格式写入的RIP包
+ * @param srcIP 大端序
+ * @param dstIP 大端序
+ */
 uint32_t packetAssemble(RipPacket rip, uint32_t srcIP, uint32_t dstIP)
 {
-    uint32_t len = assemble(&rip, output + IP_OFFSET + 20 + 8);
+    uint32_t len = assemble(&rip, frame + IP_OFFSET_WITH_LEN + 20 + 8);
 
     // UDP
-    *(uint16_t *)(output + IP_OFFSET + 20) = htons(520);     // src port: 520
-    *(uint16_t *)(output + IP_OFFSET + 20 + 2) = htons(520); // dst port: 520
-    *(uint16_t *)(output + IP_OFFSET + 20 + 4) = htons(len += 8);
-    // TODO: calculate the checksum of UDP
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20) = htons(520);     // src port: 520
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20 + 2) = htons(520); // dst port: 520
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20 + 4) = htons(len += 8);
     // checksum calculation for udp
     // if you don't want to calculate udp checksum, set it to zero
-    *(uint16_t *)(output + IP_OFFSET + 20 + 6) = 0; // checksum: omitted as zero
+    // Zero menas sender didn't calculate the checksum,
+    // in this case, the receiver won't check this checksum.
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 20 + 6) = 0; // checksum: omitted as zero first
 
     // IP
-    *(uint8_t *)(output + IP_OFFSET + 0) = 0x45;                                    // Version & Header length
-    *(uint8_t *)(output + IP_OFFSET + 1) = 0xc0;                                    // Differentiated Services Code Point (DSCP)
-    *(uint16_t *)(output + IP_OFFSET + 2) = htons(len += 20);                       // Total Length
-    *(uint16_t *)(output + IP_OFFSET + 4) = 0;                                      // ID
-    *(uint16_t *)(output + IP_OFFSET + 6) = 0;                                      // FLAGS/OFF
-    *(uint8_t *)(output + IP_OFFSET + 8) = 1;                                       // TTL
-    *(uint8_t *)(output + IP_OFFSET + 9) = 0x11;                                    // Protocol: UDP:0x11 TCP:0x06 ICMP:0x01
-    *(uint32_t *)(output + IP_OFFSET + 12) = srcIP;                                 // src ip
-    *(uint32_t *)(output + IP_OFFSET + 16) = dstIP;                                 // dst ip
-    *(uint16_t *)(output + IP_OFFSET + 10) = ntohs(IPChecksum(output + IP_OFFSET)); // checksum calculation for ip
+    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 0) = 0x45;                                            // Version & Header length
+    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 1) = 0xc0;                                            // Differentiated Services Code Point (DSCP)
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 2) = htons(len += 20);                               // Total Length
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 4) = 0;                                              // ID
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 6) = 0;                                              // FLAGS/OFF
+    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 8) = 1;                                               // TTL
+    *(uint8_t *)(frame + IP_OFFSET_WITH_LEN + 9) = 0x11;                                            // Protocol: UDP:0x11 TCP:0x06 ICMP:0x01
+    assign4(frame + IP_OFFSET_WITH_LEN + 12, srcIP);                                                // src ip
+    assign4(frame + IP_OFFSET_WITH_LEN + 16, dstIP);                                                // dst ip
+    *(uint16_t *)(frame + IP_OFFSET_WITH_LEN + 10) = ntohs(IPChecksum(frame + IP_OFFSET_WITH_LEN)); // checksum calculation for ip
 
-    return len;
+    return len + IP_OFFSET;
+}
+
+/**
+ * @param if_index the index of interface to send the response packet
+ * @param if_ip the ip of the interface
+ * @param adj_if_ip the ip of the adjacent interface which is sent to
+ * 
+ * All addresses here are big endiness
+ */
+void response(int if_index, uint32_t if_ip, uint32_t adj_if_ip)
+{
+    int entryTot = getEntries(entries, if_index);
+
+    RipPacket p = RipPacket(0x2);
+    for (int i = 0; i < entryTot; ++i)
+    {
+        int q, r;
+        div(i, 25, q, r);
+        if (if_index != entries[i]->if_index)
+        {
+            if (p.numEntries == 24)
+            {
+                size_t len = packetAssemble(p, if_ip, adj_if_ip);
+                SendEthernetFrame(i, frame, len);
+
+                p = RipPacket(0x2);
+            }
+            p.entries[p.numEntries++] = RipEntry(
+                // The format of the routing entry
+                // key: <addr, len>, value: <if_index, nexthop, metric>
+                entries[i]->addr,
+                entries[i]->len == 0 ? 0 : htonl(~((1 << 32 - entries[i]->len) - 1)),
+                entries[i]->nexthop,
+                htonl(min(ntohl(entries[i]->metric) + 1, 16u)));
+        }
+    }
+    if (p.numEntries)
+    {
+        size_t len = packetAssemble(p, if_ip, adj_if_ip);
+        SendEthernetFrame(if_index, frame, len);
+    }
 }
 
 int main(int argc, char *argv[])
 {
-    uint8_t *eth_frame;
+    // little endian
+    uint32_t addrs[N_IFACE_ON_BOARD] = {0x0a000001, 0x0a000101, 0x0a000201, 0x0a000301};
+    uint32_t adjrouters[N_IFACE_ON_BOARD] = {0x0a00000b, 0x0a00010a, 0x0a00020a, 0x0a00030c};
 
     printf("addrs = [");
     for (int i = 0; i < N_IFACE_ON_BOARD; ++i)
@@ -61,6 +104,7 @@ int main(int argc, char *argv[])
 
     // 0a.
     Init(addrs);
+    Trie_Init();
 
     // 0b. Add direct routes
     // For example:
@@ -71,11 +115,11 @@ int main(int argc, char *argv[])
     for (uint32_t i = 0; i < N_IFACE_ON_BOARD; i++)
     {
         RoutingTableEntry entry = RoutingTableEntry(
-            addrs[i] & 0x00FFFFFF, // big endian
-            24,                    // small endian
-            i,                     // small endian
-            0,                     // big endian, means direct
-            0x01000000             // big endian
+            htonl(addrs[i]) & 0x00FFFFFF, // big endian
+            24,                           // small endian
+            i,                            // small endian
+            0,                            // big endian, means direct
+            0x01000000                    // big endian
         );
 
         update(true, entry);
@@ -92,23 +136,19 @@ int main(int argc, char *argv[])
             //   printf("Regular RIP Broadcasting every 5s.\n");
 
             // send complete routing table to every interface
-            // ref. RFC2453 3.8
-            // multicast MAC for 224.0.0.9 is 01:00:5e:00:00:09
-            static uint32_t multicastingIP = 0x090000e0;
-            static macaddr_t multicastingMAC = {0x01, 0x00, 0x5e, 0x00, 0x00, 0x09};
-            for (uint32_t i = 0; i < N_IFACE_ON_BOARD; ++i)
-            {
-                size_t len = packetAssemble(routingTable(i), addrs[i], multicastingIP);
+            // horizontal split is considered
+            // The multicast dst is not supported
+            // So we directly send the regular response to the IP of the adjacent routers
 
-                SendEthernetFrame(i, output + 4, len);
-            }
+            for (uint32_t i = 0; i < N_IFACE_ON_BOARD; ++i)
+                response(i, htonl(addrs[i]), htonl(adjrouters[i]));
             last_time = time;
         }
 
         int mask = (1 << N_IFACE_ON_BOARD) - 1;
         int if_index;
 
-        int res = ReceiveEthernetFrame(eth_frame, 1000, &if_index);
+        int res = ReceiveEthernetFrame(frame, 1000, &if_index);
 
         if (res < 0)
         {
@@ -126,15 +166,15 @@ int main(int argc, char *argv[])
         }
 
         // 1. validate
-        if (!validateIPChecksum(eth_frame + IP_OFFSET, res))
+        if (!validateIPChecksum(frame + IP_OFFSET_WITH_LEN, res))
         {
             printf("Invalid IP Checksum\n");
             continue;
         }
 
         // big endian
-        in_addr_t src_addr = read_addr(eth_frame + IP_OFFSET + 12);
-        in_addr_t dst_addr = read_addr(eth_frame + IP_OFFSET + 16);
+        in_addr_t src_addr = read_addr(frame + IP_OFFSET_WITH_LEN + 12);
+        in_addr_t dst_addr = read_addr(frame + IP_OFFSET_WITH_LEN + 16);
 
         // 2. check whether dst is me
         bool dst_is_me = false;
@@ -160,53 +200,48 @@ int main(int argc, char *argv[])
             printf("Receive an package from if %d\n", if_index);
 
             // check and validate
-            if (disassemble(eth_frame + IP_OFFSET, res, &rip))
+            if (!disassemble(frame + IP_OFFSET_WITH_LEN, res, &rip))
             {
                 if (rip.command == 1)
                 {
                     // 3a.3 request, ref. RFC2453 3.9.1
                     // only need to respond to whole table requests in the lab
-                    // but horizontal split also needs considering here
+                    // but simple horizontal split also needs considering here
+                    // In fact, I think even the whole table doesn't need to response
+                    // but this is reserved as @jiegec says that.
                     printf("RIP request\n");
                     // send it back
-                    SendEthernetFrame(if_index, output + 4, packetAssemble(routingTable(if_index), addrs[if_index], src_addr));
+                    response(if_index, htonl(addrs[if_index]), htonl(adjrouters[if_index]));
                 }
                 else
                 {
                     // 3a.2 response, ref. RFC2453 3.9.2
                     // update routing table
-                    // new metric = ?
-                    // update metric, if_index, nexthop
-                    // what is missing from RoutingTableEntry?
+                    // simple horizon split
 
-                    printf("RIP Response %d\n", rip.numEntries);
+                    printf("RIP Response\n");
 
                     for (int i = 0; i < rip.numEntries; i++)
                     {
-                        printf("rip.entries[%d] = ", i);
-                        rip.entries[i].print();
-                        printf("\n");
+                        // printf("rip.entries[%d] = ", i);
+                        // rip.entries[i].print();
+                        // printf("\n");
 
-                        if (htonl(rip.entries[i].metric) < 16)
-                        { // TODO: Poison reverse
-                            if (update(true, RoutingTableEntry(
-                                                 rip.entries[i].addr,
-                                                 [](uint32_t mask) -> uint32_t {
-                                                     mask = htonl(mask);
-                                                     for (uint32_t i = 0; i <= 32; ++i)
-                                                         if (mask << i == 0)
-                                                             return i;
-                                                 }(rip.entries[i].mask),
-                                                 (uint32_t)if_index,
-                                                 src_addr,
-                                                 rip.entries[i].metric)))
-                            {
-                                outputTable();
-                            }
+                        if (update(true, RoutingTableEntry(
+                                             rip.entries[i].addr,
+                                             [](uint32_t mask) -> uint32_t {
+                                                 mask = htonl(mask);
+                                                 for (uint32_t i = 0; i <= 32; ++i)
+                                                     if (mask << i == 0)
+                                                         return i;
+                                             }(rip.entries[i].mask),
+                                             (uint32_t)if_index,
+                                             src_addr,
+                                             htonl(min(ntohl(rip.entries[i].metric) + 1, 16)))))
+                        {
+                            // outputTable();
                         }
                     }
-
-                    // triggered updates? ref. RFC2453 3.10.1
                 }
             }
         }
