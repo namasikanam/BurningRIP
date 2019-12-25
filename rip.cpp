@@ -3,7 +3,8 @@
 
 RipPacket::RipPacket(uint8_t c) : numEntries(0), command(c)
 {
-    // memset(entries, 0, sizeof(RipEntry) * RIP_MAX_ENTRY);
+    for (int i = RIP_MAX_ENTRY; i--;)
+        entries[i] = RipEntry();
 }
 
 RipPacket &RipPacket::operator=(RipPacket rhs)

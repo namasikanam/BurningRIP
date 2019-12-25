@@ -91,11 +91,6 @@ int main()
     Init(addrs);
 
     // Add direct routes
-    // For example:
-    // 10.0.0.0/24 if 0
-    // 10.0.1.0/24 if 1
-    // 10.0.2.0/24 if 2
-    // 10.0.3.0/24 if 3
     for (uint32_t i = 0; i < N_IFACE_ON_BOARD; i++)
     {
         RoutingTableEntry entry = RoutingTableEntry(
@@ -119,10 +114,7 @@ int main()
         { // 5s for test
             printf("Start to send for every 5s.\n");
 
-            for (int i = 0; i < 4; ++i)
-            {
-                SendEthernetFrame(0, frame, packetAssemble(routingTable(i), htonl(addrs[i]), 0x0200a8c0 + 0x010000 * i));
-            }
+            SendEthernetFrame(0, frame, packetAssemble(routingTable(0), htonl(addrs[0]), 0x0200a8c0));
 
             last_time = time;
         }
