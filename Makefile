@@ -23,7 +23,7 @@ LDFLAGS= -static -EL -nostdlib --nmagic
 
 .PHONY: clean all move
 
-all: baseram.mem $(PROGRAM).d $(DUMPS)
+all: baseram.mem extram.mem $(PROGRAM).d $(DUMPS)
 
 	
 bootloader.s.o: bootloader.s
@@ -45,7 +45,7 @@ $(PROGRAM).d: $(PROGRAM).o
 	$(TARGET)-objdump -D $^ -M no-aliases,gpr-names=numeric > $@
 
 baseram.mem: $(PROGRAM).bin
-	cat $(PROGRAM).bin > baseram.mem 
+	split -b 4194304 boilerplate.bin ram. && cp ram.aa baseram.mem && cp ram.ab extram.mem
 
 move: baseram.mem
 	cp baseram.mem ../
