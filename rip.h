@@ -17,12 +17,15 @@ struct RipEntry
 
     void print()
     {
-        //   printf("RipEntry {addr = %s, mask = %s, nexthop = %s, metric = %s}",
-        //     inet_ntoa(in_addr{addr}),
-        //     inet_ntoa(in_addr{mask}),
-        //     inet_ntoa(in_addr{nexthop}),
-        //     inet_ntoa(in_addr{metric})regt
-        // );
+        printf("RipEntry {addr = ");
+        printaddr(addr);
+        printf(", mask = ");
+        printaddr(mask);
+        printf(", nexthop = ");
+        printaddr(nexthop);
+        printf(", metric = ");
+        printf(ntohl(metric));
+        printf("}");
     }
 };
 

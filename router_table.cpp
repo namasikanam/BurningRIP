@@ -69,7 +69,9 @@ bool Trie::insert(RoutingTableEntry entry)
         putc('\n');
 
         return true;
-    } else if (ntohl(node->entry->metric) > ntohl(entry.metric)) {
+    }
+    else if (ntohl(node->entry->metric) > ntohl(entry.metric))
+    {
         *(node->entry) = entry;
 
         printf("Insert an entry: ");
@@ -147,9 +149,9 @@ int Trie::getEntries(RoutingTableEntry **entries, int if_index)
     int tot = 0;
     if (entry && entry->if_index != if_index)
     {
-        printf("Get ");
-        entry->print();
-        putc('\n');
+        // printf("Get ");
+        // entry->print();
+        // putc('\n');
 
         *(entries++) = entry;
         ++tot;

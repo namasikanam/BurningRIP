@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
             htonl(addrs[i]) & 0x00FFFFFF, // big endian
             24,                           // small endian
             i,                            // small endian
-            htonl(adjrouters[i]),         // big endian, means direct
+            0,                            // big endian, means direct
             0x01000000                    // big endian
         );
 
@@ -177,11 +177,6 @@ int main(int argc, char *argv[])
         // putc('\n');
     }
     printf("Initialized.");
-
-    response(0, htonl(addrs[0]), htonl(adjrouters[0]));
-
-    response(0, htonl(addrs[0]), htonl(adjrouters[0]));
-    return 0;
 
     uint64_t last_time = 0;
     while (1)

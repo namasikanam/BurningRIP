@@ -133,27 +133,27 @@ void SendEthernetFrame(int if_index, uint8_t *frame, size_t length)
     }
     *(uint32_t *)SEND_CONTROL_ADDRESS = (uint32_t)frame;
 
-    puts("[send]", 6);
-    for (int i = 0; i < 4; ++i)
-    {
-        putc(hextoch(frame[i] >> 4 & 0xf));
-        putc(hextoch(frame[i] & 0xf));
-        putc(' ');
-    }
-    putc('\n');
-    for (int i = 0; i < length; ++i)
-    {
-        putc(hextoch(frame[4 + i] >> 4 & 0xf));
-        putc(hextoch(frame[4 + i] & 0xf));
+    // puts("[send]", 6);
+    // for (int i = 0; i < 4; ++i)
+    // {
+    //     putc(hextoch(frame[i] >> 4 & 0xf));
+    //     putc(hextoch(frame[i] & 0xf));
+    //     putc(' ');
+    // }
+    // putc('\n');
+    // for (int i = 0; i < length; ++i)
+    // {
+    //     putc(hextoch(frame[4 + i] >> 4 & 0xf));
+    //     putc(hextoch(frame[4 + i] & 0xf));
 
-        if ((i & 15) == 15)
-        {
-            putc('\n');
-        }
-        else
-        {
-            putc(' ');
-        }
-    }
-    putc('\n');
+    //     if ((i & 15) == 15)
+    //     {
+    //         putc('\n');
+    //     }
+    //     else
+    //     {
+    //         putc(' ');
+    //     }
+    // }
+    // putc('\n');
 }

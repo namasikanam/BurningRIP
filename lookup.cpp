@@ -47,10 +47,16 @@ bool update(bool insert, RoutingTableEntry entry)
     {
         if (isHardwareTableFull())
         {
+            printf("Hardware routing table is full.\n");
+
             return false;
         }
         if (!root.insert(entry))
         {
+            printf("Failed to insert ");
+            entry.print();
+            putc('\n');
+
             return false;
         }
 

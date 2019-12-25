@@ -47,8 +47,14 @@ bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output)
 {
     int totalLength = getData(packet, 2);
 
+    // printf("Length of IP packet = ");
+    // printf(totalLength);
+    // printf("\n");
+
     if (totalLength > len)
     {
+        printf("Too len.\n");
+
         return false;
     }
     RipPacket &ripPacket = *output;
@@ -60,22 +66,32 @@ bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output)
     // DONE: check RIP port
     if (!(src_port == 520))
     {
+        printf("src_port != 520\n");
+
         return false;
     }
     if (!(dst_port == 520))
     {
+        printf("dst_port != 520\n");
+
         return false;
     }
     if (!(ripPacket.command == 1 || ripPacket.command == 2))
     {
+        printf("Wrong command.\n");
+
         return false;
     }
     if (!(version == 2))
     {
+        printf("Wrong version.\n");
+
         return false;
     }
     if (!(zero == 0))
     {
+        printf("Wrong zero.\n");
+
         return false;
     }
     ripPacket.numEntries = 0;
@@ -91,29 +107,43 @@ bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output)
 
         if (!(ripPacket.command == 1 && family == 0 || ripPacket.command == 2 && family == 2))
         {
+            printf("Wrong correspondence of command ");
+            printf(ripPacket.command);
+            printf(" and family ");
+            printf(family);
+            putc('\n');
+
             return false;
         }
         if (!(*(uint16_t *)(packet + rip_start + 2) == 0))
         { // Tag
+            printf("Tag is not zero.\n");
+
             return false;
         }
         if (!(htonl(ripEntry.metric) >= 1 && htonl(ripEntry.metric) <= 16))
         { // metric
+            printf("Metric is not in the right bound.");
+
             return false;
         }
-        if (!(ripEntry.mask != 0xffffffffu && (ripEntry.addr & ~ripEntry.mask) == 0))
+
+        bool valid_mask = false;
+        valid_mask = htonl(ripEntry.mask) == 0;
+        for (int i = 0; i < 32; ++i)
+            if (htonl(ripEntry.mask) == ~((1u << i) - 1))
+                valid_mask = true;
+        if (!valid_mask)
         {
+            printf("Invalid mask.\n");
+
             return false;
         }
-        if (![ripEntry]() {
-                if (htonl(ripEntry.mask) == 0)
-                    return true;
-                for (int i = 0; i < 32; ++i)
-                    if (htonl(ripEntry.mask) == ~((1 << i) - 1))
-                        return true;
-                return false;
-            }())
+
+        if (!((ripEntry.addr & ~ripEntry.mask) == 0))
         {
+            printf("Addr is not zero at the outside of mask.\n");
+
             return false;
         }
     }
