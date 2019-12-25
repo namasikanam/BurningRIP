@@ -29,7 +29,6 @@ bool Trie::insert(RoutingTableEntry entry)
     {
         if (~addr >> i & 1)
         {
-
             if (node->lc == nullptr)
             {
                 tries[trieTot] = Trie();
@@ -60,10 +59,18 @@ bool Trie::insert(RoutingTableEntry entry)
         // putc('\n');
     }
 
-    if (node->entry == nullptr || node->entry->metric > entry.metric)
+    if (node->entry == nullptr)
     {
         node->entry = trie_entries + trie_entryTot;
         trie_entries[trie_entryTot++] = entry;
+
+        printf("Insert an entry: ");
+        node->entry->print();
+        putc('\n');
+
+        return true;
+    } else if (ntohl(node->entry->metric) > ntohl(entry.metric)) {
+        *(node->entry) = entry;
 
         printf("Insert an entry: ");
         node->entry->print();

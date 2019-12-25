@@ -136,6 +136,7 @@ void response(int if_index, uint32_t if_ip, uint32_t adj_if_ip)
     {
         size_t len = packetAssemble(p, if_ip, adj_if_ip);
 
+
         SendEthernetFrame(if_index, frame, len);
     }
 }
@@ -160,15 +161,15 @@ int main(int argc, char *argv[])
             htonl(addrs[i]) & 0x00FFFFFF, // big endian
             24,                           // small endian
             i,                            // small endian
-            htonl(adjrouters[i]),         // big endian, means direct
+            htonl(adjrouters[i]),                            // big endian, means direct
             0x01000000                    // big endian
         );
 
         update(true, entry);
         InsertHardwareTable(ntohl(entry.addr), ntohl(entry.nexthop), entry.len, entry.if_index);
 
-        // entry.addr = htonl(endpoints[i]) & 0x00FFFFFF;
-        // InsertHardwareTable(ntohl(entry.addr), ntohl(entry.nexthop), entry.len, entry.if_index);
+        entry.addr = htonl(endpoints[i]) & 0x00FFFFFF;
+        InsertHardwareTable(ntohl(entry.addr), ntohl(entry.nexthop), entry.len, entry.if_index);
 
         // printf("After insert the direct route of interface ");
         // printf(i);
@@ -177,31 +178,4 @@ int main(int argc, char *argv[])
         // putc('\n');
     }
     printf("Initialized.");
-
-    response(0, htonl(addrs[0]), htonl(adjrouters[0]));
-
-    response(0, htonl(addrs[0]), htonl(adjrouters[0]));
-    return 0;
-
-    uint64_t last_time = 0;
-    while (1)
-    {
-        uint64_t time = GetTicks();
-        if (time > last_time + 5 * 1000)
-        { // 30s for standard
-            printf("Regular RIP Broadcasting every 5s.\n");
-            // if (time > last_time + 5 * 1000) { // 5s for test
-            //   printf("Regular RIP Broadcasting every 5s.\n");
-
-            // send complete routing table to every interface
-            // horizontal split is considered
-            // The multicast dst is not supported
-            // So we directly send the regular response to the IP of the adjacent routers
-
-            for (uint32_t i = 0; i < N_IFACE_ON_BOARD; ++i)
-                response(i, htonl(addrs[i]), htonl(adjrouters[i]));
-            last_time = time;
-        }
-    }
-    return 0;
 }
