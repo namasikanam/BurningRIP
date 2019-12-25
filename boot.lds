@@ -5,13 +5,13 @@ SECTIONS {
         *(.text.init)
         *(.text.*)
     }
+    . = 0x80400000;
     .rodata : {
         *(.rodata.*)
     }
     .data : {
         *(.data.*)
     }
-    . = 0x80400000;
     _bss_start = .;
     .bss : {
         *(.bss.*)
