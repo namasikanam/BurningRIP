@@ -10,7 +10,8 @@ extern bool query(uint32_t addr, uint32_t *nexthop, uint32_t *metric, uint32_t *
 extern bool forward(uint8_t *packet, size_t len);
 extern bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output);
 extern uint32_t assemble(const RipPacket *rip, uint8_t *buffer);
-int getEntries(RoutingTableEntry **entries, int if_index);
+extern int getEntries(RoutingTableEntry **entries, int if_index);
+extern void Lookup_Init();
 
 uint8_t frame[2048];
 
@@ -64,11 +65,9 @@ void response(int if_index, uint32_t if_ip, uint32_t adj_if_ip)
     RipPacket p = RipPacket(0x2);
     for (int i = 0; i < entryTot; ++i)
     {
-        int q, r;
-        div(i, 25, q, r);
         if (if_index != entries[i]->if_index)
         {
-            if (p.numEntries == 24)
+            if (p.numEntries == 25)
             {
                 size_t len = packetAssemble(p, if_ip, adj_if_ip);
                 SendEthernetFrame(i, frame, len);
@@ -76,8 +75,6 @@ void response(int if_index, uint32_t if_ip, uint32_t adj_if_ip)
                 p = RipPacket(0x2);
             }
             p.entries[p.numEntries++] = RipEntry(
-                // The format of the routing entry
-                // key: <addr, len>, value: <if_index, nexthop, metric>
                 entries[i]->addr,
                 entries[i]->len == 0 ? 0 : htonl(~((1 << 32 - entries[i]->len) - 1)),
                 entries[i]->nexthop,
@@ -97,14 +94,15 @@ int main(int argc, char *argv[])
     uint32_t addrs[N_IFACE_ON_BOARD] = {0xc0a80001, 0xc0a80101, 0xc0a80201, 0xc0a80301};
     uint32_t adjrouters[N_IFACE_ON_BOARD] = {0xc0a80002, 0xc0a80102, 0xc0a80202, 0xc0a80302};
 
-    printf("addrs = [");
-    for (int i = 0; i < N_IFACE_ON_BOARD; ++i)
-        printf("%u, ", (in_addr){addrs[i]}.s_addr);
-    printf("]\n");
+    // printf("addrs = [");
+    // for (int i = 0; i < N_IFACE_ON_BOARD; ++i)
+    //     printf("%u, ", (in_addr){addrs[i]}.s_addr);
+    // printf("]\n");
 
     // 0a.
     Init(addrs);
     Trie_Init();
+    Lookup_Init();
 
     // 0b. Add direct routes
     // For example:
@@ -129,9 +127,9 @@ int main(int argc, char *argv[])
     while (1)
     {
         uint64_t time = GetTicks();
-        if (time > last_time + 30 * 1000)
+        if (time > last_time + 5 * 1000)
         { // 30s for standard
-            printf("Regular RIP Broadcasting every 30s.\n");
+            printf("Regular RIP Broadcasting every 5s.\n");
             // if (time > last_time + 5 * 1000) { // 5s for test
             //   printf("Regular RIP Broadcasting every 5s.\n");
 
@@ -221,25 +219,29 @@ int main(int argc, char *argv[])
 
                     printf("RIP Response\n");
 
-                    for (int i = 0; i < rip.numEntries; i++)
-                    {
-                        // printf("rip.entries[%d] = ", i);
-                        // rip.entries[i].print();
-                        // printf("\n");
+                    for (int i = 0; i < rip.numEntries; i++) {
+                        if (ntohl(rip.entries[i].metric) != 16){
+                            // printf("rip.entries[%d] = ", i);
+                            // rip.entries[i].print();
+                            // printf("\n");
 
-                        if (update(true, RoutingTableEntry(
-                                             rip.entries[i].addr,
-                                             [](uint32_t mask) -> uint32_t {
-                                                 mask = htonl(mask);
-                                                 for (uint32_t i = 0; i <= 32; ++i)
-                                                     if (mask << i == 0)
-                                                         return i;
-                                             }(rip.entries[i].mask),
-                                             (uint32_t)if_index,
-                                             src_addr,
-                                             htonl(min(ntohl(rip.entries[i].metric) + 1, 16)))))
-                        {
-                            // outputTable();
+                            unsigned mask = ntohl(rip.entries[i].mask);
+                            unsigned len = 32;
+                            for (int i = 0; i < 32; ++i)
+                                if (mask << i == 0) {
+                                    len = i;
+                                    break;
+                                }
+
+                            if (update(true, RoutingTableEntry(
+                                                rip.entries[i].addr,
+                                                len,
+                                                (uint32_t)if_index,
+                                                src_addr,
+                                                htonl(min(ntohl(rip.entries[i].metric) + 1, 16)))))
+                            {
+                                // outputTable();
+                            }
                         }
                     }
                 }

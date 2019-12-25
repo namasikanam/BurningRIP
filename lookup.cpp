@@ -80,9 +80,9 @@ bool query(uint32_t addr, uint32_t *nexthop, uint32_t *metric, uint32_t *if_inde
 
 int getEntries(RoutingTableEntry **entries, int if_index)
 {
-    printf("The address of root is ");
-    printaddr(&root);
-    putc('\n');
+    // printf("The address of root is ");
+    // printaddr(&root);
+    // putc('\n');
 
     return root.getEntries(entries, if_index);
 }
