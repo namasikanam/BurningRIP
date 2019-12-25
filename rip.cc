@@ -195,10 +195,10 @@ int main(int argc, char *argv[])
             // 3a.1
             RipPacket rip;
 
-            printf("Receive an package from if %d\n", if_index);
+            // printf("Receive an package from if %d\n", if_index);
 
             // check and validate
-            if (!disassemble(frame + IP_OFFSET_WITH_LEN, res, &rip))
+            if (disassemble(frame + IP_OFFSET_WITH_LEN, res, &rip))
             {
                 if (rip.command == 1)
                 {
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
                     // but simple horizontal split also needs considering here
                     // In fact, I think even the whole table doesn't need to response
                     // but this is reserved as @jiegec says that.
-                    printf("RIP request\n");
+                    // printf("RIP request\n");
                     // send it back
                     response(if_index, htonl(addrs[if_index]), htonl(adjrouters[if_index]));
                 }
@@ -217,28 +217,33 @@ int main(int argc, char *argv[])
                     // update routing table
                     // simple horizon split
 
-                    printf("RIP Response\n");
+                    printf("RIP Response of ");
+                    printf(rip.numEntries);
+                    putc('\n');
 
-                    for (int i = 0; i < rip.numEntries; i++) {
-                        if (ntohl(rip.entries[i].metric) != 16){
-                            // printf("rip.entries[%d] = ", i);
-                            // rip.entries[i].print();
-                            // printf("\n");
+                    for (int i = 0; i < rip.numEntries; i++)
+                    {
+                        // printf("rip.entries[%d] = ", i);
+                        // rip.entries[i].print();
+                        // printf("\n");
 
+                        if (ntohl(rip.entries[i].metric) != 16)
+                        {
                             unsigned mask = ntohl(rip.entries[i].mask);
                             unsigned len = 32;
                             for (int i = 0; i < 32; ++i)
-                                if (mask << i == 0) {
+                                if (mask << i == 0)
+                                {
                                     len = i;
                                     break;
                                 }
 
                             if (update(true, RoutingTableEntry(
-                                                rip.entries[i].addr,
-                                                len,
-                                                (uint32_t)if_index,
-                                                src_addr,
-                                                htonl(min(ntohl(rip.entries[i].metric) + 1, 16)))))
+                                                 rip.entries[i].addr,
+                                                 len,
+                                                 (uint32_t)if_index,
+                                                 src_addr,
+                                                 htonl(min(ntohl(rip.entries[i].metric) + 1, 16)))))
                             {
                                 // outputTable();
                             }

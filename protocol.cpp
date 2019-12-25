@@ -113,6 +113,18 @@ bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output)
             printf(family);
             putc('\n');
 
+            printf("family is found in ");
+            for (int i = 0; i < 4; ++i)
+            {
+                putc(hextoch(packet[rip_start + i] >> 8 & 0xf));
+                putc(hextoch(packet[rip_start + i] & 0xf));
+                putc(' ');
+            }
+            putc('\n');
+
+            printf("family is ");
+            printf((int)packet[rip_start + 1]);
+
             return false;
         }
         if (!(*(uint16_t *)(packet + rip_start + 2) == 0))

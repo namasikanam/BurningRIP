@@ -32,12 +32,10 @@ uint32_t getlen()
     return len;
 }
 
-void puts(const char *s, int len)
+void puts(const char *s)
 {
-    for (int i = 0; i < len; ++i)
-    {
-        putc(*(s + i));
-    }
+    while (*s != '\0')
+        putc(*s++);
     putc('\n');
 }
 
@@ -68,7 +66,7 @@ void bootloader()
     //     *MEM = getc();
     //     MEM++;
     //   }
-    puts("BT", 2);
+    puts("BT");
 }
 
 void halt(uint32_t epc)
