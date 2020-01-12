@@ -1,8 +1,8 @@
-## The Software of the experiment Computer Organization and Theory of Computer Network
+# Burning Router (software part)
 
 This project is the software part (Routing Information Protocol) of first year united experiment of computer organization and theory of computer network, based on our own designed hardware part of router and CPU.
 
-### Build
+## Build
 
 Step 1. Compile the codes.
 
@@ -16,7 +16,7 @@ Step 2. Load the memory data into the baseram and extram.
 
 Step 3. Programming the device with your bitstream.
 
-### Codes structure
+## Codes structure
 
 - `boodloader.cpp` / `bootloader.h`
 - Core functions of RIP:
@@ -37,3 +37,8 @@ Step 3. Programming the device with your bitstream.
   - `router_table_direct.cc`
   - `router_table_update.cc`
   - `simple_print.cc`
+
+## Authors
+- Chen Zhang
+- Xingyu Xie
+- Wenhou Sun
