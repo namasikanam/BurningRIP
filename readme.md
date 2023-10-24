@@ -38,6 +38,24 @@ Step 3. Programming the device with your bitstream.
   - `router_table_update.cc`
   - `simple_print.cc`
 
+## Warning
+
+**如果您是选报了硬件路由器实验的《计算机网络原理》选课同学，请立即关闭此页面，[禁止抄袭](https://lab.cs.tsinghua.edu.cn/router/doc/software/plagiarism/)，否则后果自负。**
+
+**注：《学生纪律处分管理规定实施细则》节选：**
+
+>**第六章 学术不端、违反学习纪律的行为与处分**
+>
+>**第二十一条 有下列违反课程学习纪律情形之一的，给予警告以上、留校察看以下处分：**
+>
+> **（一）课程作业抄袭严重的；**
+>
+> **（二）实验报告抄袭严重或者篡改实验数据的；**
+>
+> **（三）期中、期末课程论文抄袭严重的；**
+>
+> **（四）在课程学习过程中严重弄虚作假的其他情形。**
+
 ## Authors
 - Chen Zhang
 - Xingyu Xie
